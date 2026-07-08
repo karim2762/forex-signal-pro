@@ -1,0 +1,286 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Forex Signal Pro — Live Terminal</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg: #0A0E14;
+    --panel: #12161F;
+    --panel-2: #171C27;
+    --border: #232A38;
+    --text: #C9D1D9;
+    --text-dim: #6B7383;
+    --gold: #D4A24C;
+    --buy: #3FB950;
+    --sell: #F85149;
+    --neutral: #8B949E;
+    --risk: #E3A008;
+  }
+  *{box-sizing:border-box; margin:0; padding:0;}
+  body{
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'IBM Plex Sans', sans-serif;
+    min-height: 100vh;
+  }
+  .mono{ font-family: 'IBM Plex Mono', monospace; }
+  .display{ font-family: 'Space Grotesk', sans-serif; }
+
+  header{
+    border-bottom: 1px solid var(--border);
+    padding: 20px 32px;
+    display:flex; align-items:center; justify-content:space-between;
+    position: sticky; top:0; background: rgba(10,14,20,0.92); backdrop-filter: blur(8px); z-index: 10;
+  }
+  .brand{ display:flex; align-items:center; gap:12px; }
+  .brand .mark{
+    width:34px; height:34px; border-radius:8px;
+    background: linear-gradient(135deg, var(--gold), #8a6420);
+    display:flex; align-items:center; justify-content:center;
+    font-family:'Space Grotesk'; font-weight:700; color:#0A0E14; font-size:16px;
+  }
+  .brand h1{ font-family:'Space Grotesk'; font-size:18px; font-weight:600; letter-spacing:0.2px; }
+  .brand .sub{ font-size:11px; color:var(--text-dim); font-family:'IBM Plex Mono'; letter-spacing: 0.5px; }
+  .status-strip{ display:flex; align-items:center; gap:18px; font-family:'IBM Plex Mono'; font-size:12px; color:var(--text-dim); }
+  .dot{ width:7px; height:7px; border-radius:50%; background: var(--buy); display:inline-block; margin-right:6px; box-shadow: 0 0 8px var(--buy); }
+
+  main{ padding: 28px 32px 60px; max-width: 1400px; margin: 0 auto; }
+
+  .grid{
+    display:grid;
+    grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+    gap:16px;
+    margin-bottom: 36px;
+  }
+
+  .card{
+    background: var(--panel);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 18px 20px;
+    position: relative;
+    overflow: hidden;
+    transition: border-color .2s ease;
+  }
+  .card:hover{ border-color: #34405a; }
+  .card .top{ display:flex; justify-content:space-between; align-items:flex-start; margin-bottom: 14px; }
+  .card .pair{ font-family:'Space Grotesk'; font-size: 20px; font-weight:700; letter-spacing: 0.3px; }
+  .card .pair small{ color: var(--text-dim); font-size: 11px; font-family:'IBM Plex Mono'; display:block; font-weight: 400; margin-top:2px; }
+
+  .action-badge{
+    font-family:'IBM Plex Mono'; font-size: 11px; font-weight:600; letter-spacing: 0.8px;
+    padding: 5px 10px; border-radius: 6px; text-transform: uppercase;
+  }
+  .action-BUY{ background: rgba(63,185,80,0.14); color: var(--buy); border:1px solid rgba(63,185,80,0.35); }
+  .action-SELL{ background: rgba(248,81,73,0.14); color: var(--sell); border:1px solid rgba(248,81,73,0.35); }
+  .action-NEUTRAL{ background: rgba(139,148,158,0.12); color: var(--neutral); border:1px solid rgba(139,148,158,0.3); }
+  .action-STAND{ background: rgba(227,160,8,0.14); color: var(--risk); border:1px solid rgba(227,160,8,0.35); }
+
+  .confidence-row{ margin-bottom:14px; }
+  .confidence-label{ display:flex; justify-content:space-between; font-family:'IBM Plex Mono'; font-size:11px; color:var(--text-dim); margin-bottom:6px; }
+  .bar-track{ height:6px; background:#1D2330; border-radius: 4px; overflow:hidden; }
+  .bar-fill{ height:100%; border-radius:4px; transition: width .4s ease; }
+
+  .metrics{ display:grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 14px; }
+  .metric{ font-family:'IBM Plex Mono'; font-size: 11px; }
+  .metric .k{ color: var(--text-dim); display:block; margin-bottom:2px; }
+  .metric .v{ font-size: 13px; font-weight: 500; }
+
+  .rationale{ font-size: 12px; color: var(--text-dim); line-height: 1.5; border-top: 1px solid var(--border); padding-top: 12px; }
+
+  .tf-votes{ display:flex; gap: 4px; margin-top: 4px; }
+  .tf-chip{ width:20px; height:20px; border-radius:4px; font-size:9px; display:flex; align-items:center; justify-content:center; font-family:'IBM Plex Mono'; }
+  .tf-bull{ background: rgba(63,185,80,0.2); color: var(--buy); }
+  .tf-bear{ background: rgba(248,81,73,0.2); color: var(--sell); }
+  .tf-neutral{ background: rgba(139,148,158,0.15); color: var(--neutral); }
+
+  section h2{
+    font-family:'Space Grotesk'; font-size: 14px; font-weight:600;
+    text-transform: uppercase; letter-spacing: 1px; color: var(--text-dim);
+    margin-bottom: 14px; display:flex; align-items:center; gap:8px;
+  }
+  section h2::before{ content:''; width:3px; height:14px; background: var(--gold); display:inline-block; border-radius:2px; }
+
+  .panels{ display:grid; grid-template-columns: 1.3fr 1fr; gap: 20px; }
+  @media (max-width: 900px){ .panels{ grid-template-columns: 1fr; } }
+
+  .news-list{ background: var(--panel); border:1px solid var(--border); border-radius:10px; max-height: 520px; overflow-y:auto; }
+  .news-item{ padding: 14px 18px; border-bottom: 1px solid var(--border); display:flex; gap:12px; align-items:flex-start; }
+  .news-item:last-child{ border-bottom:none; }
+  .news-tag{ width:8px; height:8px; border-radius:50%; margin-top:6px; flex-shrink:0; }
+  .tag-bullish{ background: var(--buy); }
+  .tag-bearish{ background: var(--sell); }
+  .tag-neutral{ background: var(--neutral); }
+  .news-item .title{ font-size: 13px; line-height:1.4; }
+  .news-item a{ color: var(--text); text-decoration:none; }
+  .news-item a:hover{ color: var(--gold); }
+  .news-item .meta{ font-family:'IBM Plex Mono'; font-size:10px; color:var(--text-dim); margin-top:4px; }
+
+  .cal-list{ background: var(--panel); border:1px solid var(--border); border-radius:10px; max-height: 520px; overflow-y:auto; }
+  .cal-item{ padding: 14px 18px; border-bottom: 1px solid var(--border); }
+  .cal-item:last-child{ border-bottom:none; }
+  .cal-item .row1{ display:flex; justify-content:space-between; align-items:center; margin-bottom:4px; }
+  .impact-High{ color: var(--sell); font-family:'IBM Plex Mono'; font-size:10px; letter-spacing:0.5px; }
+  .cal-item .title{ font-size: 13px; }
+  .cal-item .meta{ font-family:'IBM Plex Mono'; font-size:10px; color:var(--text-dim); margin-top: 4px; }
+
+  .empty{ padding: 30px 18px; text-align:center; color: var(--text-dim); font-size: 12px; font-family:'IBM Plex Mono'; }
+
+  footer{ text-align:center; padding: 30px; color: var(--text-dim); font-size: 11px; font-family:'IBM Plex Mono'; border-top: 1px solid var(--border); margin-top: 20px; }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="brand">
+    <div class="mark">FX</div>
+    <div>
+      <h1>Forex Signal Pro</h1>
+      <div class="sub">NEWS · CALENDAR · TREND CONSENSUS</div>
+    </div>
+  </div>
+  <div class="status-strip">
+    <span><span class="dot" id="statusDot"></span><span id="statusText">syncing…</span></span>
+    <span id="lastUpdated">—</span>
+  </div>
+</header>
+
+<main>
+  <section>
+    <h2>Live Signals</h2>
+    <div class="grid" id="signalsGrid">
+      <div class="empty">Loading signals…</div>
+    </div>
+  </section>
+
+  <div class="panels">
+    <section>
+      <h2>News Feed</h2>
+      <div class="news-list" id="newsList"><div class="empty">Loading headlines…</div></div>
+    </section>
+    <section>
+      <h2>Economic Calendar</h2>
+      <div class="cal-list" id="calList"><div class="empty">Loading calendar…</div></div>
+    </section>
+  </div>
+</main>
+
+<footer>
+  Signals are generated from public news, economic calendar data, and multi-timeframe price trend logic.
+  This is not financial advice — always confirm with your own analysis before trading.
+</footer>
+
+<script>
+const actionClass = a => a === 'BUY' ? 'action-BUY' : a === 'SELL' ? 'action-SELL' : a === 'STAND ASIDE' ? 'action-STAND' : 'action-NEUTRAL';
+const barColor = a => a === 'BUY' ? 'var(--buy)' : a === 'SELL' ? 'var(--sell)' : a === 'STAND ASIDE' ? 'var(--risk)' : 'var(--neutral)';
+const tfClass = v => v === 'bull' ? 'tf-bull' : v === 'bear' ? 'tf-bear' : 'tf-neutral';
+
+function timeAgo(ts){
+  if(!ts) return '—';
+  const diff = Math.floor(Date.now()/1000 - ts);
+  if(diff < 60) return diff + 's ago';
+  if(diff < 3600) return Math.floor(diff/60) + 'm ago';
+  return Math.floor(diff/3600) + 'h ago';
+}
+
+async function loadSignals(){
+  try{
+    const res = await fetch('/api/signals');
+    const data = await res.json();
+    document.getElementById('lastUpdated').textContent = 'updated ' + timeAgo(data.last_updated);
+    document.getElementById('statusText').textContent = 'live';
+
+    const grid = document.getElementById('signalsGrid');
+    if(!data.signals || data.signals.length === 0){
+      grid.innerHTML = '<div class="empty">No signal data yet — waiting for first refresh cycle.</div>';
+      return;
+    }
+    grid.innerHTML = data.signals.map(s => `
+      <div class="card">
+        <div class="top">
+          <div class="pair">${s.pair}<small>${s.pair.slice(0,3)} / ${s.pair.slice(3)}</small></div>
+          <div class="action-badge ${actionClass(s.action)}">${s.action}</div>
+        </div>
+        <div class="confidence-row">
+          <div class="confidence-label"><span>Confidence</span><span>${s.confidence}%</span></div>
+          <div class="bar-track"><div class="bar-fill" style="width:${s.confidence}%; background:${barColor(s.action)}"></div></div>
+        </div>
+        <div class="metrics">
+          <div class="metric"><span class="k">Trend consensus</span><span class="v">${s.trend_consensus.toUpperCase()} (${s.trend_strength_pct}%)</span></div>
+          <div class="metric"><span class="k">News sentiment</span><span class="v">${s.news_label} (${s.news_sentiment})</span></div>
+        </div>
+        <div class="metric" style="margin-bottom:14px;">
+          <span class="k">Timeframe votes</span>
+          <div class="tf-votes">
+            ${Object.entries(s.timeframe_votes).map(([tf,v]) => `<div class="tf-chip ${tfClass(v)}" title="${tf}: ${v}">${tf}</div>`).join('')}
+          </div>
+        </div>
+        <div class="rationale">${s.rationale}</div>
+      </div>
+    `).join('');
+  }catch(e){
+    document.getElementById('statusText').textContent = 'connection error';
+    document.getElementById('statusDot').style.background = 'var(--sell)';
+  }
+}
+
+async function loadNews(){
+  try{
+    const res = await fetch('/api/news');
+    const data = await res.json();
+    const list = document.getElementById('newsList');
+    if(!data.news || data.news.length === 0){
+      list.innerHTML = '<div class="empty">No headlines yet.</div>';
+      return;
+    }
+    list.innerHTML = data.news.slice(0,30).map(n => `
+      <div class="news-item">
+        <div class="news-tag tag-${n.label}"></div>
+        <div>
+          <div class="title"><a href="${n.link}" target="_blank" rel="noopener">${n.title}</a></div>
+          <div class="meta">${n.source} · ${n.label} (${n.sentiment_score})</div>
+        </div>
+      </div>
+    `).join('');
+  }catch(e){}
+}
+
+async function loadCalendar(){
+  try{
+    const res = await fetch('/api/calendar');
+    const data = await res.json();
+    const list = document.getElementById('calList');
+    const events = data.all_events || [];
+    if(events.length === 0){
+      list.innerHTML = '<div class="empty">No calendar data yet.</div>';
+      return;
+    }
+    const sorted = events.filter(e => e.hours_away >= -2).sort((a,b) => a.hours_away - b.hours_away).slice(0,25);
+    list.innerHTML = sorted.map(e => `
+      <div class="cal-item">
+        <div class="row1">
+          <span class="title">${e.title}</span>
+          ${e.impact === 'High' ? '<span class="impact-High">● HIGH</span>' : ''}
+        </div>
+        <div class="meta">${e.country} · forecast ${e.forecast || '—'} · prev ${e.previous || '—'} · in ${e.hours_away}h</div>
+      </div>
+    `).join('');
+  }catch(e){}
+}
+
+function refreshAll(){
+  loadSignals();
+  loadNews();
+  loadCalendar();
+}
+
+refreshAll();
+setInterval(refreshAll, 30000); // poll every 30s; backend itself refreshes every 5min
+</script>
+
+</body>
+</html>

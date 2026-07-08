@@ -1,0 +1,10 @@
+fastapi
+uvicorn[standard]
+yfinance
+pandas
+numpy
+feedparser
+vaderSentiment
+apscheduler
+python-telegram-bot
+requests
